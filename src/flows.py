@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-from swnf.model.utils import unconstrained_RQS
+from src.utils import unconstrained_RQS
 
 
 class FCNN(nn.Module):
