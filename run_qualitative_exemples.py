@@ -4,13 +4,15 @@ import torch.optim as optim
 from src.losses import sliced_wasserstein_distance
 from src.flows import *
 from src.models import SWFlowModel
+from src.toy_data import *
+
 
 import matplotlib.pyplot as plt
 import argparse
 import os
 import logging
 import numpy as np
-from sklearn.datasets import make_circles
+from sklearn.datasets import make_circles, make_blobs
 
 def main():
     # train args
@@ -28,8 +30,8 @@ def main():
                         help='random seed (default:10)')
     parser.add_argument('--data_size', type=int, default=2500, metavar='N',
                          help='Size of the datasets (default: 2500)')                        
-    parser.add_argument('--dataset', type=str, default="circles", metavar='DT',
-                         help='dataset on the x space (default: "circles")')  
+    parser.add_argument('--data_type', type=str, default="circles", metavar='DT',
+                         help='data type (default: "circles")')  
                          
     args = parser.parse_args()
     # setup log printing 
@@ -50,13 +52,7 @@ def main():
     model1 = SWFlowModel(flows, device)
     optimizer1 = optim.Adam(model1.parameters(), lr=args.lr)
 
-    if args.dataset:
-        data_1, _ = make_circles(n_samples=args.data_size, factor=0.99999)
-        data_1[:, 0] -= 1
-        data_1[:, 1] -= 1
-        data_2, _ = make_circles(n_samples=args.data_size, factor=0.99999)
-        data_2[:, 0] += 1
-        data_2[:, 1] += 1
+    data_1, data_2 = build_data(n_samples = args.data_size, data_type = args.data_type)
 
     x = torch.from_numpy(data_1.astype(np.float32)).to(device)
     trueZ = torch.from_numpy(data_2.astype(np.float32)).to(device)
@@ -98,7 +94,7 @@ def main():
     ax = plt.gca()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.savefig(args.outdir + args.dataset + '_OT_ActNorm.pdf', format='pdf')
+    plt.savefig(args.outdir + args.data_type + '_OT_ActNorm.pdf', format='pdf')
 
 if __name__ == '__main__':
     main()
