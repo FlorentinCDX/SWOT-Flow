@@ -4,7 +4,7 @@ import torch.optim as optim
 from src.losses import sliced_wasserstein_distance
 from src.flows import *
 from src.models import SWFlowModel
-from src.toy_data import *
+from src.toy_data import build_data
 
 
 import matplotlib.pyplot as plt
@@ -13,6 +13,8 @@ import os
 import logging
 import numpy as np
 from sklearn.datasets import make_circles, make_blobs
+
+data_types = ["triangles", "disks", "squares"]
 
 def main():
     # train args
@@ -31,7 +33,7 @@ def main():
     parser.add_argument('--data_size', type=int, default=2500, metavar='N',
                          help='Size of the datasets (default: 2500)')                        
     parser.add_argument('--data_type', type=str, default="circles", metavar='DT',
-                         help='data type (default: "circles")')  
+                         help='data type (accepted: "circles", "rectangles")')  
                          
     args = parser.parse_args()
     # setup log printing 
@@ -51,6 +53,9 @@ def main():
 
     model1 = SWFlowModel(flows, device)
     optimizer1 = optim.Adam(model1.parameters(), lr=args.lr)
+    
+    if args.data_type not in ["circles", "rectangles"]:
+        raise ValueError('data_type must be one of the following: circles, rectangles')
 
     data_1, data_2 = build_data(n_samples = args.data_size, data_type = args.data_type)
 
@@ -58,6 +63,9 @@ def main():
     trueZ = torch.from_numpy(data_2.astype(np.float32)).to(device)
     lamb = 0.000
     gamma = 0.000
+
+    print("Start Training generalize reproduction: " + str(args.data_type)) 
+    print("__________________________________________________________")
 
     for slices in np.arange(1500, 3000, 100):
         for i in range(args.epochs):
@@ -84,6 +92,9 @@ def main():
 
     n = model1.nb_flows
 
+    print("Start plot generation: " + str(args.data_type)) 
+    print("__________________________________________________________")
+
     for i in range(n+1):
         dat = model1.forward_barycenter(x, i).detach().cpu().numpy()
         plt.axis([-2.1, 2.1, -2.1, 2.1])
@@ -94,7 +105,23 @@ def main():
     ax = plt.gca()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    plt.savefig(args.outdir + args.data_type + '_OT_ActNorm.pdf', format='pdf')
+    plt.savefig(args.outdir + args.data_type + 'train_ActNorm.pdf', format='pdf')
+    plt.close()
+
+    for dat_tp in data_types:
+        data_test, _ = build_data(n_samples = args.data_size, data_type =dat_tp)
+        x = torch.from_numpy(data_test.astype(np.float32)).to(device)
+        for i in range(n+1):
+            dat = model1.forward_barycenter(x, i).detach().cpu().numpy()
+            plt.axis([-2.1, 2.1, -2.1, 2.1])
+            plt.axis('off')
+            plt.scatter(dat[:, 0], dat[:, 1], s=1, color=plt.cm.Blues(0.3+i/4))
+            plt.plot()
+            ax = plt.gca()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        plt.savefig(args.outdir + args.data_type +'_generalize_to_' + str(dat_tp) + '_ActNorm.pdf', format='pdf')
+        plt.close()
 
 if __name__ == '__main__':
     main()

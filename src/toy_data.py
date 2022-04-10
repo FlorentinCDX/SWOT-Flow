@@ -107,16 +107,30 @@ def build_disks(n_samples):
     length = np.random.uniform(0.5, 1.5, n_samples)
     angle = np.pi * np.random.uniform(0, 2, n_samples)
 
-    x = np.sqrt(length) * np.cos(angle) - 1.2
-    y = np.sqrt(length) * np.sin(angle) - 1.2
+    x = np.sqrt(length) * np.cos(angle) - 1
+    y = np.sqrt(length) * np.sin(angle) - 1
 
     data_1 = np.stack((x, y), axis=1) 
 
-    x = np.sqrt(length) * np.cos(angle) + 1.2
-    y = np.sqrt(length) * np.sin(angle) + 1.2
+    x = np.sqrt(length) * np.cos(angle) + 1
+    y = np.sqrt(length) * np.sin(angle) + 1
 
     data_2 = np.stack((x, y), axis=1) 
 
+    return data_1, data_2
+
+def build_squares(n_samples):
+    """Generate points from to square
+
+    Args:
+        - data_size (int): number of points to generate per square 
+    
+    Returns:
+        - data1 (np.array): points from the first square
+        - data2 (np.array): points from the second square
+    """
+    data_1 = np.random.uniform(low=[-0.5, -0.5], high=[0.5,0.5], size=(n_samples, 2))
+    data_2 = np.random.uniform(low=[0.5, 0.5], high=[1.5,1.5], size=(n_samples, 2))
     return data_1, data_2
 
 def build_data(n_samples, data_type):
@@ -140,6 +154,9 @@ def build_data(n_samples, data_type):
         data1, data2 = built_rectangles(n_samples)
     elif data_type == 'disks':
         data1, data2 = build_disks(n_samples)
+    elif data_type == 'squares':
+        data1, data2  = build_squares(n_samples)
     else:
         raise ValueError('data_type must be one of the following: circles, blobs, triangles, rectangles, disks')
     return data1, data2
+
