@@ -23,12 +23,12 @@ def fit_gaussian(samples, hist):
 
 def compare_gaussian_with_empirical(gt_mean, gt_cov, exp_hist, exp_samples):
     exp_mean, exp_cov = fit_gaussian(exp_samples, exp_hist)
-    mean_diff = np.linalg.norm(gt_mean - exp_mean)
-    cov_diff = np.linalg.norm(gt_cov - exp_cov)
+    mean_diff = np.power(np.linalg.norm(gt_mean - exp_mean), 2)
+    cov_diff = np.power(np.linalg.norm(gt_cov - exp_cov), 2)
     return {'mean_diff': mean_diff, 'cov_diff': cov_diff}
 
 def main():
-        device = torch.device("cuda")
+        device = torch.device("cuda:1")
 
         stats = {}
         rmd = {}
@@ -56,12 +56,6 @@ def main():
             normal_A_2 = param_2['normal_A']
             cov_2 = np.matmul(normal_A_2, np.transpose(normal_A_2))
             
-            mean_1 = np.zeros(dim)
-            cov_1 = np.eye(dim)
-            
-            mean_2 = np.zeros(dim) + 3
-            cov_2 = np.eye(dim)
-            
             n=10000
 
             data_1 = np.random.multivariate_normal(mean_1, cov_1, n)
@@ -80,7 +74,7 @@ def main():
             gamma = 0.000
 
             for slices in np.arange(1500, 3200, 100):
-                for i in range(1000):
+                for i in range(1500):
                     optimizer1.zero_grad()
                     z, shatten, _ = model1(x)
                     sw = sliced_wasserstein_distance(z, trueZ, slices, 2, device).mean()
@@ -90,38 +84,25 @@ def main():
                     optimizer1.step()
                 print(f"Model "+str(dim)+" |\t" +
                     f"Slices: {slices}\t" +
-                    f"SW: {sw:.5f}\t" +
+                    f"SW: {1e3*sw:.5f}\t" +
                     f"shatten: {shatten.mean():.5f}\t" +
                     f"cost: {cost.mean():.5f}\t" +
-                    f"loss: {loss:.5f}")
-                if slices >= 2500: 
-                    if lamb < 0.0008:
+                    f"loss: {1e3*loss:.5f}")
+                if slices >= 2500 & i < 1000: 
+                    if lamb < 0.00008:
                         lamb += 0.00001
-                    if gamma < 0.0008:
-                        gamma += 0.00001
+                    if gamma < 0.00008:
+                        gamma += 0.000001
                         
-            for i in range(1000):
-                optimizer1.zero_grad()
-                z, shatten, _ = model1(x)
-                sw = sliced_wasserstein_distance(z, trueZ, slices, 2, device).mean()
-                cost = torch.sum(model1.transport_cost(x))
-                loss = sw + lamb*cost + gamma*shatten
-                loss.backward()
-                optimizer1.step()
-            print(f"Model "+str(dim)+" |\t" +
-                f"Slices: {slices}\t" +
-                f"SW: {sw:.5f}\t" +
-                f"shatten: {shatten.mean():.5f}\t" +
-                f"cost: {cost.mean():.5f}\t" +
-                f"loss: {loss:.5f}")
-            
             data_1 = np.random.multivariate_normal(mean_1, cov_1, 10000)
             x = torch.from_numpy(data_1.astype(np.float32)).to(device)
                         
             exp_samples= model1.forward_barycenter(x, 2).detach().cpu().numpy()
             exp_hist = np.zeros(exp_samples.shape[0]) + 1/exp_samples.shape[0]
-            
+
             xp_mean, xp_cov = fit_gaussian(exp_samples, exp_hist)
+            print("mean", xp_mean)
+            print('cov', xp_cov) 
             tmp = compare_gaussian_with_empirical(gt_mean, gt_cov, exp_hist, exp_samples)
             lkh = multivariate_normal.pdf(exp_samples, gt_mean, gt_cov).mean()
             tmp["likelyhood"] = lkh
