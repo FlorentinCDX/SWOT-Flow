@@ -14,7 +14,7 @@ Please make sure that you have python 3+ install in yout machine. First you will
 mkdir SWOT-Flow
 cd SWOT-Flow
 ```
-Once use downloaded all the files from 4open.science and put them in the SWOT-Flow directory, you will have to install dependencies by:
+Once use downloaded all the source files from github, you will have to install dependencies by:
 ```bash
 pip install -r requirements.txt
 ```
@@ -58,3 +58,19 @@ python run_gaussians_experiment.py
 ```
 
 Results will be seen directly in the terminal.
+
+## Citation
+
+Please cite as
+
+```
+@article{coeurdoux2022swotf,
+  author    = {Florentin Coeurdoux and
+               Nicolas Dobigeon and
+               Pierre Chainais},
+  title     = {Learning Optimal Transport Between two Empirical Distributions with Normalizing Flows},
+  journal   = {Machine Learning and Knowledge Discovery in Databases, {ECML} {PKDD}},
+  publisher = {Springer},
+  year      = {2022},
+}
+```
